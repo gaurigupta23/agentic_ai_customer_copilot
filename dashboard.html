@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banking AI Copilot</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap">
+  <style>
+    :root {
+      --bg: #F7F8FA;
+      --surface: #FFFFFF;
+      --sidebar: #0F1F3D;
+      --sidebar-text: rgba(255,255,255,0.65);
+      --sidebar-active: #FFFFFF;
+      --fg: #0F1F3D;
+      --fg-muted: #6B7A99;
+      --border: #E4E8F0;
+      --accent: #1E5FD6;
+      --accent-light: #EBF1FD;
+      --green: #0D9F6A;
+      --green-light: #E6F7F2;
+      --amber: #D97706;
+      --amber-light: #FEF3C7;
+      --red: #DC2626;
+      --tag-bg: #EBF1FD;
+      --tag-fg: #1E5FD6;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0B1120; --surface: #141E33; --sidebar: #080E1C;
+        --sidebar-text: rgba(255,255,255,0.5); --sidebar-active: #FFFFFF;
+        --fg: #E8ECF5; --fg-muted: #7A89A8; --border: #1F2D4A;
+        --accent: #4080F0; --accent-light: #162040; --green: #0FBF7E;
+        --green-light: #0C2318; --amber: #F59E0B; --amber-light: #231A05;
+        --red: #EF4444; --tag-bg: #162040; --tag-fg: #4080F0;
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0B1120; --surface: #141E33; --sidebar: #080E1C;
+      --sidebar-text: rgba(255,255,255,0.5); --sidebar-active: #FFFFFF;
+      --fg: #E8ECF5; --fg-muted: #7A89A8; --border: #1F2D4A;
+      --accent: #4080F0; --accent-light: #162040; --green: #0FBF7E;
+      --green-light: #0C2318; --amber: #F59E0B; --amber-light: #231A05;
+      --red: #EF4444; --tag-bg: #162040; --tag-fg: #4080F0;
+      color-scheme: dark;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--fg);
+      display: flex; min-height: 100vh; font-size: 14px; line-height: 1.5;
+    }
+    .sidebar {
+      width: 220px; min-width: 220px; background: var(--sidebar);
+      display: flex; flex-direction: column; padding: 0;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-logo .wordmark { font-family: 'DM Serif Display', serif; font-size: 18px; color: #fff; letter-spacing: -0.2px; }
+    .sidebar-logo .wordmark span { color: #4080F0; }
+    .sidebar-logo .subtitle { font-size: 10px; color: var(--sidebar-text); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+    .sidebar-section { padding: 20px 12px 8px; }
+    .sidebar-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--sidebar-text); padding: 0 8px; margin-bottom: 4px; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 6px; color: var(--sidebar-text); font-size: 13.5px; cursor: pointer; transition: background 0.15s, color 0.15s; user-select: none; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .sidebar-item.active { background: rgba(255,255,255,0.12); color: var(--sidebar-active); font-weight: 500; }
+    .sidebar-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+    .sidebar-bottom { margin-top: auto; padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .agent-status { display: flex; align-items: center; gap: 8px; padding: 10px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #0FBF7E; flex-shrink: 0; box-shadow: 0 0 6px #0FBF7E88; }
+    .agent-status .label { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .agent-status .sublabel { font-size: 11px; color: rgba(255,255,255,0.35); }
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 10; }
+    .topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
+    .call-badge { display: flex; align-items: center; gap: 6px; background: var(--green-light); color: var(--green); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.2px; }
+    .call-badge .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .timer { font-size: 13px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+    .content { padding: 28px; flex: 1; display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .panel-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .panel-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--fg-muted); font-weight: 600; flex: 1; }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; flex-shrink: 0; }
+    .customer-info { flex: 1; }
+    .customer-name { font-size: 16px; font-weight: 600; }
+    .customer-id { font-size: 12px; color: var(--fg-muted); margin-top: 1px; }
+    .panel-body { padding: 20px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .info-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--fg-muted); margin-bottom: 3px; }
+    .info-item .value { font-size: 13.5px; font-weight: 500; }
+    .section-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--fg-muted); margin-bottom: 10px; font-weight: 600; }
+    .affinities { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .affinity-row { display: flex; align-items: center; gap: 10px; }
+    .affinity-label { font-size: 12.5px; width: 80px; flex-shrink: 0; }
+    .affinity-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .affinity-bar { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.8s cubic-bezier(0.22,1,0.36,1); }
+    .affinity-bar.low { background: var(--border); }
+    .affinity-bar.med { background: var(--amber); }
+    .affinity-level { font-size: 11px; font-weight: 600; width: 30px; text-align: right; flex-shrink: 0; }
+    .affinity-level.HIGH { color: var(--accent); }
+    .affinity-level.MED { color: var(--amber); }
+    .affinity-level.LOW { color: var(--fg-muted); }
+    .privacy-badge { display: flex; align-items: center; gap: 8px; background: var(--green-light); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--green); font-weight: 500; }
+    .opportunity-stack { display: flex; flex-direction: column; gap: 16px; }
+    .opp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .opp-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .opp-card-header { background: var(--accent); padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+    .opp-card-icon { font-size: 18px; }
+    .opp-card-title { font-size: 14px; font-weight: 600; color: #fff; flex: 1; }
+    .opp-card-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; background: rgba(255,255,255,0.2); color: #fff; padding: 3px 8px; border-radius: 10px; }
+    .opp-card-body { padding: 18px; }
+    .fit-reason { font-size: 13px; color: var(--fg); line-height: 1.6; margin-bottom: 14px; }
+    .ready-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .ready-chip { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--green-light); color: var(--green); }
+    .ready-chip.no { background: var(--amber-light); color: var(--amber); }
+    .ready-label { font-size: 12px; color: var(--fg-muted); }
+    .opening-line-box { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 14px; }
+    .opening-line-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+    .opening-line-text { font-size: 13px; color: var(--fg); line-height: 1.65; font-style: italic; }
+    .value-prop { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+    .value-prop-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--fg-muted); font-weight: 600; margin-bottom: 6px; }
+    .value-prop-text { font-size: 12.5px; color: var(--fg); line-height: 1.6; }
+    .benefits { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .benefit-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: var(--fg); line-height: 1.5; }
+    .benefit-icon { color: var(--green); flex-shrink: 0; margin-top: 1px; font-size: 13px; }
+    .objection { margin-top: 12px; background: var(--amber-light); border-radius: 8px; padding: 10px 12px; }
+    .objection-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--amber); font-weight: 700; margin-bottom: 4px; }
+    .objection-text { font-size: 12px; color: var(--fg); line-height: 1.55; }
+    .customer-selector { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+    .selector-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--fg-muted); font-weight: 600; margin-bottom: 10px; }
+    .customer-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .customer-tab { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); font-size: 13px; font-weight: 500; cursor: pointer; color: var(--fg-muted); background: var(--bg); transition: all 0.15s; }
+    .customer-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .customer-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+    .pipeline-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+    .pipeline-steps { display: flex; align-items: center; gap: 0; }
+    .pipeline-step { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .step-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .step-dot.done { background: var(--green); }
+    .step-label { font-size: 10px; color: var(--fg-muted); margin-top: 5px; text-align: center; }
+    .step-connector { flex: 1; height: 2px; background: var(--green); margin-bottom: 18px; }
+    .step-connector.pending { background: var(--border); }
+    @media (max-width: 900px) { .sidebar { display: none; } .content { grid-template-columns: 1fr; } .topbar { padding: 0 16px; } }
+    @media (max-width: 600px) { .content { padding: 16px; } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="wordmark">Apex<span>AI</span></div>
+    <div class="subtitle">Banking Copilot</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Workspace</div>
+    <div class="sidebar-item active"><span class="icon">⚡</span> Live Calls</div>
+    <div class="sidebar-item"><span class="icon">👥</span> Customers</div>
+    <div class="sidebar-item"><span class="icon">📦</span> Products</div>
+    <div class="sidebar-item"><span class="icon">📈</span> Analytics</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Agents</div>
+    <div class="sidebar-item"><span class="icon">🔍</span> Intelligence</div>
+    <div class="sidebar-item"><span class="icon">🗄️</span> Product Match</div>
+    <div class="sidebar-item"><span class="icon">💡</span> Opportunity</div>
+    <div class="sidebar-item"><span class="icon">🗣️</span> Coach</div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="agent-status">
+      <div class="status-dot"></div>
+      <div>
+        <div class="label">5 Agents Active</div>
+        <div class="sublabel">Pipeline running</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">Live Call Dashboard</div>
+    <div class="call-badge"><div class="dot"></div> Call in Progress</div>
+    <div class="timer" id="timer">04:32</div>
+  </div>
+
+  <div class="content">
+    <!-- Left column -->
+    <div>
+      <!-- Live input panel -->
+      <div class="customer-selector" style="margin-bottom:16px;">
+        <div class="selector-label" style="margin-bottom:8px;">🔴 Live Pipeline — Paste Customer Data</div>
+        <textarea id="live-input" placeholder="Paste customer transaction data here and click Analyse..." style="width:100%;min-height:110px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;font-size:12.5px;line-height:1.6;resize:vertical;outline:none;"></textarea>
+        <button id="analyse-btn" onclick="analyseCustomer()" style="margin-top:10px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;transition:opacity 0.15s;">
+          ⚡ Analyse with AI Pipeline
+        </button>
+        <div id="pipeline-status" style="display:none;margin-top:8px;font-size:12px;color:var(--fg-muted);text-align:center;"></div>
+      </div>
+
+      <!-- Customer selector -->
+      <div class="customer-selector">
+        <div class="selector-label">Demo Customers</div>
+        <div class="customer-tabs">
+          <div class="customer-tab active" onclick="switchCustomer('sarah', this)">Sarah Mitchell</div>
+          <div class="customer-tab" onclick="switchCustomer('james', this)">James Okafor</div>
+        </div>
+      </div>
+
+      <!-- Pipeline stepper -->
+      <div class="pipeline-card">
+        <div class="section-heading">Agent Pipeline</div>
+        <div class="pipeline-steps">
+          <div class="pipeline-step"><div class="step-dot done">✓</div><div class="step-label">Intelligence</div></div>
+          <div class="step-connector"></div>
+          <div class="pipeline-step"><div class="step-dot done">✓</div><div class="step-label">Products</div></div>
+          <div class="step-connector"></div>
+          <div class="pipeline-step"><div class="step-dot done">✓</div><div class="step-label">Opportunity</div></div>
+          <div class="step-connector"></div>
+          <div class="pipeline-step"><div class="step-dot done">✓</div><div class="step-label">Offer</div></div>
+          <div class="step-connector"></div>
+          <div class="pipeline-step"><div class="step-dot done">✓</div><div class="step-label">Coach</div></div>
+        </div>
+      </div>
+
+      <!-- Customer profile panel -->
+      <div class="panel" id="customer-panel">
+        <div class="panel-header"><div class="panel-title">Customer Profile</div></div>
+        <div style="padding:20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);">
+          <div class="avatar" id="avatar">SM</div>
+          <div class="customer-info">
+            <div class="customer-name" id="cust-name">Sarah Mitchell</div>
+            <div class="customer-id" id="cust-id">CUST_001 · Premium Candidate</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="info-grid" id="info-grid">
+            <div class="info-item"><div class="label">Age</div><div class="value">34</div></div>
+            <div class="info-item"><div class="label">Income</div><div class="value">£4,200 / mo</div></div>
+            <div class="info-item"><div class="label">Current Product</div><div class="value">Basic Debit Card</div></div>
+            <div class="info-item"><div class="label">Risk Level</div><div class="value" style="color:var(--green)">Low</div></div>
+          </div>
+          <div class="section-heading">Behavioural Affinities</div>
+          <div class="affinities" id="affinities">
+            <div class="affinity-row"><div class="affinity-label">Travel</div><div class="affinity-bar-wrap"><div class="affinity-bar" style="width:90%"></div></div><div class="affinity-level HIGH">HIGH</div></div>
+            <div class="affinity-row"><div class="affinity-label">FX / Intl</div><div class="affinity-bar-wrap"><div class="affinity-bar" style="width:85%"></div></div><div class="affinity-level HIGH">HIGH</div></div>
+            <div class="affinity-row"><div class="affinity-label">Premium</div><div class="affinity-bar-wrap"><div class="affinity-bar" style="width:80%"></div></div><div class="affinity-level HIGH">HIGH</div></div>
+            <div class="affinity-row"><div class="affinity-label">Savings</div><div class="affinity-bar-wrap"><div class="affinity-bar low" style="width:20%"></div></div><div class="affinity-level LOW">LOW</div></div>
+          </div>
+          <div class="privacy-badge">🔒 Privacy check passed — no sensitive transactions exposed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Opportunity Card -->
+    <div class="opportunity-stack">
+      <div class="opp-card featured">
+        <div class="opp-card-header">
+          <div class="opp-card-icon" id="opp-icon">✈️</div>
+          <div class="opp-card-title" id="opp-product">Voyager Premium Travel Card</div>
+          <div class="opp-card-badge">Best Match</div>
+        </div>
+        <div class="opp-card-body">
+          <div class="ready-row">
+            <div class="ready-chip" id="ready-chip">✓ Ready to Offer</div>
+            <div class="ready-label" id="ready-label">High propensity — offer now</div>
+          </div>
+          <div class="fit-reason" id="fit-reason">Directly addresses all primary needs with integrated airport lounge access, zero FX fees, travel insurance, and rewards on international spending in a single premium solution.</div>
+          <div class="opening-line-box">
+            <div class="opening-line-label">💬 Suggested Opening Line</div>
+            <div class="opening-line-text" id="opening-line">"Sarah, I've noticed you're travelling internationally quite frequently — and I'm guessing you're probably juggling multiple cards just to manage the foreign exchange fees and get decent lounge access. What if you could consolidate all of that into one card?"</div>
+          </div>
+          <div class="value-prop">
+            <div class="value-prop-label">Value Proposition</div>
+            <div class="value-prop-text" id="value-prop">Consolidate your international travel spending into one premium card that eliminates foreign exchange friction, maximises rewards on every trip, and grants you exclusive airport lounge access — so you travel smarter, not harder.</div>
+            <div class="benefits" id="benefits">
+              <div class="benefit-item"><span class="benefit-icon">✓</span> Zero FX fees on all international transactions</div>
+              <div class="benefit-item"><span class="benefit-icon">✓</span> Unlimited access to 1,200+ airport lounges worldwide</div>
+              <div class="benefit-item"><span class="benefit-icon">✓</span> 5× rewards on travel & international dining</div>
+            </div>
+          </div>
+          <div class="objection">
+            <div class="objection-label">⚡ Likely Objection & Response</div>
+            <div class="objection-text" id="objection"><strong>If she asks about the annual fee:</strong> "Most clients in your travel pattern recover the fee within two or three international trips from the FX savings alone — before the lounge access even factors in."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:8000';
+  const statusSteps = [
+    '🔍 Agent 1: Analysing customer...',
+    '🗄️  Agent 2: Searching product database...',
+    '💡 Agent 3: Discovering opportunity...',
+    '🎯 Agent 4: Constructing offer...',
+    '🗣️  Agent 5: Coaching executive...',
+    '✅ Opportunity Card ready!'
+  ];
+
+  async function analyseCustomer() {
+    const input = document.getElementById('live-input').value.trim();
+    if (!input) { alert('Please paste customer data first.'); return; }
+    const btn = document.getElementById('analyse-btn');
+    const statusEl = document.getElementById('pipeline-status');
+    btn.disabled = true;
+    btn.textContent = 'Running pipeline...';
+    statusEl.style.display = 'block';
+    let step = 0;
+    statusEl.textContent = statusSteps[0];
+    const stepTimer = setInterval(() => {
+      step++;
+      if (step < statusSteps.length - 1) statusEl.textContent = statusSteps[step];
+    }, 1800);
+    try {
+      const res = await fetch(`${API}/analyse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_data: input })
+      });
+      const json = await res.json();
+      clearInterval(stepTimer);
+      if (json.status === 'error') {
+        statusEl.textContent = '❌ Error: ' + json.message;
+        btn.disabled = false;
+        btn.textContent = '⚡ Analyse with AI Pipeline';
+        return;
+      }
+      statusEl.textContent = statusSteps[statusSteps.length - 1];
+      const d = json.data;
+      document.querySelectorAll('.step-dot').forEach(dot => { dot.classList.add('done'); dot.textContent = '✓'; });
+      document.querySelectorAll('.step-connector').forEach(c => c.classList.remove('pending'));
+      const initials = (d.name || 'CU').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('avatar').textContent = initials;
+      document.getElementById('cust-name').textContent = d.name || 'Customer';
+      document.getElementById('cust-id').textContent = 'Live Analysis · Privacy: ' + d.privacy_check;
+      const affMap = { 'Travel': d.affinities?.Travel, 'FX / Intl': d.affinities?.FX, 'Savings': d.affinities?.Savings, 'Premium': d.affinities?.Premium };
+      const pctMap = { HIGH: 90, MED: 50, LOW: 15 };
+      const aff = document.getElementById('affinities');
+      aff.innerHTML = Object.entries(affMap).map(([label, level]) => {
+        const l = (level || 'LOW').replace(/[\[\]]/g,'');
+        const cls = l === 'HIGH' ? '' : l === 'MED' ? ' med' : ' low';
+        return `<div class="affinity-row"><div class="affinity-label">${label}</div><div class="affinity-bar-wrap"><div class="affinity-bar${cls}" style="width:0%"></div></div><div class="affinity-level ${l}">${l}</div></div>`;
+      }).join('');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        aff.querySelectorAll('.affinity-bar').forEach((bar, i) => {
+          const l = Object.values(affMap)[i] || 'LOW';
+          bar.style.width = (pctMap[l.replace(/[\[\]]/g,'')] || 15) + '%';
+        });
+      }));
+      document.getElementById('opp-product').textContent = d.recommended_product || '—';
+      document.getElementById('fit-reason').textContent = d.fit_reason || '';
+      document.getElementById('opening-line').textContent = d.opening_line || '';
+      document.getElementById('value-prop').textContent = d.value_proposition || '';
+      document.getElementById('objection').innerHTML = '<strong>If they object:</strong> ' + (d.objection || '');
+      const ready = (d.conversation_ready || 'YES') === 'YES';
+      const chip = document.getElementById('ready-chip');
+      chip.textContent = ready ? '✓ Ready to Offer' : '⏸ Not Yet Ready';
+      chip.className = 'ready-chip' + (ready ? '' : ' no');
+      document.getElementById('ready-label').textContent = ready ? 'High propensity — offer now' : 'Gather more information first';
+      document.getElementById('benefits').innerHTML = (d.benefits || []).map(b =>
+        `<div class="benefit-item"><span class="benefit-icon">✓</span> ${b}</div>`
+      ).join('');
+      document.querySelectorAll('.customer-tab').forEach(t => t.classList.remove('active'));
+    } catch (err) {
+      clearInterval(stepTimer);
+      statusEl.textContent = '❌ Could not reach server. Is it running on port 8000?';
+    }
+    btn.disabled = false;
+    btn.textContent = '⚡ Analyse with AI Pipeline';
+  }
+
+  let seconds = 272;
+  setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }, 1000);
+
+  const customers = {
+    sarah: {
+      avatar: 'SM', name: 'Sarah Mitchell', id: 'CUST_001 · Premium Candidate',
+      info: [
+        { label: 'Age', value: '34' }, { label: 'Income', value: '£4,200 / mo' },
+        { label: 'Current Product', value: 'Basic Debit Card' }, { label: 'Risk Level', value: 'Low', color: 'var(--green)' }
+      ],
+      affinities: [
+        { label: 'Travel', pct: 90, level: 'HIGH' }, { label: 'FX / Intl', pct: 85, level: 'HIGH' },
+        { label: 'Premium', pct: 80, level: 'HIGH' }, { label: 'Savings', pct: 20, level: 'LOW' }
+      ],
+      icon: '✈️', product: 'Voyager Premium Travel Card', ready: true,
+      readyLabel: 'High propensity — offer now',
+      fitReason: 'Directly addresses all primary needs with integrated airport lounge access, zero FX fees, travel insurance, and rewards on international spending in a single premium solution.',
+      openingLine: '"Sarah, I\'ve noticed you\'re travelling internationally quite frequently — and I\'m guessing you\'re probably juggling multiple cards just to manage the foreign exchange fees and get decent lounge access. What if you could consolidate all of that into one card?"',
+      valueProp: 'Consolidate your international travel spending into one premium card that eliminates foreign exchange friction, maximises rewards on every trip, and grants you exclusive airport lounge access.',
+      benefits: ['Zero FX fees on all international transactions', 'Unlimited access to 1,200+ airport lounges worldwide', '5× rewards on travel & international dining'],
+      objection: '<strong>If she asks about the annual fee:</strong> "Most clients in your travel pattern recover the fee within two or three international trips from the FX savings alone — before the lounge access even factors in."'
+    },
+    james: {
+      avatar: 'JO', name: 'James Okafor', id: 'CUST_002 · Financial Wellness',
+      info: [
+        { label: 'Age', value: '28' }, { label: 'Income', value: '£2,100 / mo' },
+        { label: 'Current Product', value: 'Basic Current Account' }, { label: 'Risk Level', value: 'Medium', color: 'var(--amber)' }
+      ],
+      affinities: [
+        { label: 'Savings', pct: 85, level: 'HIGH' }, { label: 'Travel', pct: 15, level: 'LOW' },
+        { label: 'FX / Intl', pct: 10, level: 'LOW' }, { label: 'Premium', pct: 20, level: 'LOW' }
+      ],
+      icon: '🏦', product: 'HomeSaver Account', ready: true,
+      readyLabel: 'Clear alignment — offer now',
+      fitReason: 'Builds the emergency fund foundation James needs to reduce overdraft dependency while his high savings affinity indicates strong motivation for this disciplined approach.',
+      openingLine: '"James, I\'ve noticed you\'re juggling irregular income and hitting overdrafts more often than you\'d like — what if we built you a modest safety net that actually grows faster than those overdraft fees are costing you?"',
+      valueProp: 'Build a financial safety net that stops overdraft cycles. With structured monthly savings and guaranteed returns, you\'ll have breathing room when cash flow dips.',
+      benefits: ['Predictable emergency cushion — automatic monthly deposits', 'Better returns than a standard current account', 'Dedicated savings keeps budgeting clearer and simpler'],
+      objection: '<strong>If he says he can\'t commit to regular savings:</strong> "We can start with a modest amount that fits your average month, not your best month. Even £50–100 monthly builds a meaningful buffer within 6–12 months."'
+    }
+  };
+
+  function switchCustomer(id, tab) {
+    document.querySelectorAll('.customer-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const c = customers[id];
+    document.getElementById('avatar').textContent = c.avatar;
+    document.getElementById('cust-name').textContent = c.name;
+    document.getElementById('cust-id').textContent = c.id;
+    const grid = document.getElementById('info-grid');
+    grid.innerHTML = c.info.map(i =>
+      `<div class="info-item"><div class="label">${i.label}</div><div class="value"${i.color ? ` style="color:${i.color}"` : ''}>${i.value}</div></div>`
+    ).join('');
+    const aff = document.getElementById('affinities');
+    aff.innerHTML = c.affinities.map(a => {
+      const cls = a.level === 'HIGH' ? '' : a.level === 'MED' ? ' med' : ' low';
+      return `<div class="affinity-row"><div class="affinity-label">${a.label}</div><div class="affinity-bar-wrap"><div class="affinity-bar${cls}" style="width:0%"></div></div><div class="affinity-level ${a.level}">${a.level}</div></div>`;
+    }).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      aff.querySelectorAll('.affinity-bar').forEach((bar, i) => { bar.style.width = c.affinities[i].pct + '%'; });
+    }));
+    document.getElementById('opp-icon').textContent = c.icon;
+    document.getElementById('opp-product').textContent = c.product;
+    document.getElementById('fit-reason').textContent = c.fitReason;
+    document.getElementById('opening-line').textContent = c.openingLine;
+    document.getElementById('value-prop').textContent = c.valueProp;
+    document.getElementById('objection').innerHTML = c.objection;
+    const chip = document.getElementById('ready-chip');
+    chip.textContent = c.ready ? '✓ Ready to Offer' : '⏸ Not Yet Ready';
+    chip.className = 'ready-chip' + (c.ready ? '' : ' no');
+    document.getElementById('ready-label').textContent = c.readyLabel;
+    document.getElementById('benefits').innerHTML = c.benefits.map(b =>
+      `<div class="benefit-item"><span class="benefit-icon">✓</span> ${b}</div>`
+    ).join('');
+  }
+</script>
+</body>
+</html>

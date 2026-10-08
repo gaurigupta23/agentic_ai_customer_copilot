@@ -13,11 +13,10 @@ During a customer call, a bank executive pastes the customer's profile data. Fiv
 5. **Executive Coach Agent** — generates a privacy-safe personalised opening line
 
 The result is a live Opportunity Card shown on the dashboard — ready before the executive even finishes their greeting.
-![Live Call Dashboard](Screenshot.png)
 
 ## Tech stack
 
-- **Claude claude-haiku** (Anthropic) — powers all 5 agents
+- **Claude claude-haiku-4-5** (Anthropic) — powers all 5 agents
 - **ChromaDB** — vector database for semantic product search
 - **FastAPI + uvicorn** — REST API connecting the UI to the pipeline
 - **Vanilla HTML/CSS/JS** — professional dashboard UI with dark mode
@@ -52,4 +51,4 @@ ANTHROPIC_API_KEY=your_key_here
 
 ## Built by
 
-Gauri Gupta · MSc Quantitative Finance 
+Gauri Gupta · MSc Business Analytics
