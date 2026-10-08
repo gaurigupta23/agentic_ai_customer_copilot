@@ -13,6 +13,7 @@ During a customer call, a bank executive pastes the customer's profile data. Fiv
 5. **Executive Coach Agent** — generates a privacy-safe personalised opening line
 
 The result is a live Opportunity Card shown on the dashboard — ready before the executive even finishes their greeting.
+
 ![Live Call Dashboard](Screenshot.png)
 
 ## Tech stack
